@@ -1,0 +1,42 @@
+# aias.yaml
+# Complete example. Every key that is not marked optional is required.
+# The platform injects: PORT, AIAS_MODEL_<ALIAS>_URL, AIAS_MODEL_<ALIAS>_ID,
+# DATABASE_URL (only when services.postgres is declared), plus env and secrets below.
+
+name: contract-review
+description: Review a contract against a firm's playbook and flag deviations.
+version: 0.3.1
+license: MIT                 # optional, SPDX id
+homepage: https://github.com/example-firm/contract-review   # optional
+tags: [legal, documents]     # optional, for humans searching the store
+
+runtime: node                # node | python
+build: ["bun", "install", "--frozen-lockfile", "&&", "bun", "run", "build"]
+start: ["node", ".next/standalone/server.js"]
+health: /api/health          # GET on http://127.0.0.1:$PORT<health> must return 2xx within 60 s
+
+models:
+  - alias: reviewer          # ^[a-z][a-z0-9_]*$, becomes AIAS_MODEL_REVIEWER_URL
+    kind: llm                # llm | vlm  (v2 adds stt | tts | image)
+    repo: Qwen/Qwen3-14B-GGUF
+    quant: [Q4_K_M, Q5_K_M]  # ordered preference, first that fits the device budget wins
+    fallback: Qwen/Qwen3-8B-GGUF   # optional, tried with the same quant list when nothing fits
+  - alias: reader
+    kind: vlm
+    repo: Qwen/Qwen2.5-VL-7B-Instruct-GGUF
+    quant: [Q4_K_M]          # mmproj is pulled automatically for kind: vlm
+
+services:                    # optional
+  postgres:
+    migrations: db/migrations   # *.sql, applied in filename order as the app's role on every start
+
+env:                         # optional, static and visible in the store listing
+  NEXT_TELEMETRY_DISABLED: "1"
+
+secrets:                     # optional, asked once at install, stored in Windows Credential Manager
+  - name: DOCUSIGN_API_KEY
+    description: Optional. Enables sending the reviewed contract for signature.
+    required: false
+
+# Rejected keys (validate fails): ctx, n_parallel, gpu_layers, temperature, port, host.
+# Sampling belongs in the request body; everything else belongs to the platform.

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "ai-app-store",
+  "description": "The AI App Store plugin: the aias skill and the aias mcp bridge for building local AI apps.",
+  "owner": {
+    "name": "zyx1121",
+    "email": "yongxiang.zhan@outlook.com"
+  },
+  "plugins": [
+    {
+      "name": "aias",
+      "source": "./plugin",
+      "description": "Build, run, fork and publish local AI apps on the AI App Store."
+    }
+  ]
+}

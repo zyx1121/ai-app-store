@@ -1,0 +1,25 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Permissions the main window needs. Every platform capability goes through an invoke command; the one exception is opening a URL in the user's browser, and that is held to an app's own loopback port plus the two sites the store links to.",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        {
+          "url": "http://127.0.0.1:*"
+        },
+        {
+          "url": "https://github.com/*"
+        },
+        {
+          "url": "https://huggingface.co/*"
+        }
+      ]
+    }
+  ]
+}

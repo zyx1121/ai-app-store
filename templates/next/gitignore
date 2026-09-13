@@ -1,0 +1,9 @@
+# Written as .gitignore when the platform scaffolds this template.
+/node_modules
+/.next/
+/out/
+/build
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+.env*

@@ -1,0 +1,30 @@
+# AI App Store manifest. The platform injects PORT, HOST, HOSTNAME,
+# AIAS_MODEL_CHAT_URL, AIAS_MODEL_CHAT_ID, AIAS_MODEL_CHAT_KEY and
+# DATABASE_URL. Nothing else reaches this app.
+
+name: {{name}}
+description: "{{description}}"
+version: 0.1.0
+license: MIT
+tags: [example]
+
+runtime: python
+build: ["uv", "sync", "--frozen"]
+# argv is argv: `$PORT` would be passed to uvicorn as four literal characters,
+# because nothing expands a variable here. main.py reads PORT itself and binds
+# 127.0.0.1, which is the address the platform requires.
+start: ["uv", "run", "python", "main.py"]
+health: /api/health
+
+models:
+  - alias: chat
+    kind: llm
+    repo: Qwen/Qwen3-4B-GGUF
+    # Ordered preference, the platform picks the first that fits the device.
+    quant: [Q4_K_M, Q8_0]
+    # Used when nothing above fits the memory budget.
+    fallback: Qwen/Qwen3-0.6B-GGUF
+
+services:
+  postgres:
+    migrations: db/migrations

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "aias",
+  "version": "0.1.0",
+  "description": "Build, run, fork and publish local AI apps on the AI App Store: one manifest declares the models, the platform serves them on a loopback OpenAI compatible port.",
+  "author": {
+    "name": "zyx1121",
+    "email": "yongxiang.zhan@outlook.com",
+    "url": "https://github.com/zyx1121"
+  },
+  "homepage": "https://github.com/zyx1121/ai-app-store",
+  "repository": "https://github.com/zyx1121/ai-app-store",
+  "license": "MIT",
+  "keywords": ["aias", "local-ai", "llama.cpp", "gguf"]
+}

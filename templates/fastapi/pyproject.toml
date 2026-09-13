@@ -1,0 +1,16 @@
+[project]
+name = "{{name}}"
+version = "0.1.0"
+description = "{{description}}"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.121.0",
+  "uvicorn>=0.41.0",
+  "openai>=2.16.0",
+  "psycopg[binary]>=3.2.0",
+]
+
+[tool.uv]
+# The app is a script tree, not a distribution: uv installs the dependencies
+# and nothing else, so no build backend is needed.
+package = false

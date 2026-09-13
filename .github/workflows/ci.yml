@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # Windows is the only target of version 1, so it is the only thing CI proves.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: . -> target
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+
+      # The invoke boundary has no compiler behind it, so it is checked here.
+      - name: Check the invoke boundary
+        run: bun run check:commands
+
+      # The Tauri crate embeds the frontend, so dist/ must exist before cargo runs.
+      - name: Build frontend
+        run: bun run build
+
+      - name: Check formatting
+        run: cargo fmt --all --check
+
+      - name: Lint
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Test
+        run: cargo test --workspace
+
+      # Windows is the shipping target, so CI proves the installer builds. It is
+      # unsigned: signing needs a certificate that is not in this repo.
+      - name: Build the Windows installer
+        run: bun run tauri build --bundles nsis
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aias-windows
+          path: target/release/bundle/nsis/*.exe
+          if-no-files-found: error

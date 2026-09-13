@@ -1,0 +1,6 @@
+# Written as .gitignore when the platform scaffolds this template.
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+.env*

@@ -72,11 +72,11 @@ This project is below 1.0, so the bump rules are the pre-1.0 ones:
 | Title | Bump | 0.1.1 becomes |
 |-------|------|---------------|
 | `fix:`, `perf:` | patch | 0.1.2 |
-| `feat:` | patch | 0.1.2 |
+| `feat:` | minor | 0.2.0 |
 | `feat!:` or a `BREAKING CHANGE:` footer | minor | 0.2.0 |
 | everything else, alone | nothing, no release pull request opens | 0.1.1 |
 
-A `feat` bumping the patch and a break bumping the minor is deliberate: until 1.0 a break is allowed to be cheap. Both rules drop away at 1.0.
+A break bumping the minor rather than the major is the one pre-1.0 rule here: until 1.0 a break is allowed to be cheap, so it lands in the same place a feature does. That rule drops away at 1.0, where a break starts bumping the major.
 
 The last row is per batch, not per commit: a `docs` commit merged alongside a `fix` ships with it and is simply left out of the changelog. Only a batch with nothing in `feat`, `fix` or `perf` produces no release at all.
 

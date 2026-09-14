@@ -1,0 +1,91 @@
+name: release-please
+
+# Publishing is a merge, not a command. Every push to main hands the commit log
+# to Release Please, which keeps one open pull request holding the next version
+# and the changelog. Merging that pull request is the release: it tags
+# `v<version>` and this workflow attaches the Windows installer built from the
+# release commit. Any other push only refreshes the pending pull request.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      # A pull request opened by GITHUB_TOKEN starts no workflow, so the release
+      # pull request would carry no checks and the release commit would ship
+      # unproven. `workflow_dispatch` is one of the two documented exceptions to
+      # that rule, so CI is asked for by name on the release branch. The run
+      # reports against the branch head, which is the commit the pull request
+      # shows.
+      - name: Run CI on the release pull request
+        if: steps.release.outputs.pr != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ fromJSON(steps.release.outputs.pr || '{}').headBranchName }}
+        run: gh workflow run ci.yml --ref "$BRANCH"
+
+  windows:
+    # The same runner and the same build as CI, so the released installer is
+    # the artifact CI already proved on the release pull request.
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: . -> target
+
+      - name: Install frontend dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build the Windows installer
+        run: bun run tauri build --bundles nsis
+
+      # The installer is unsigned and there are no updater artifacts yet. Code
+      # signing goes here, between the build and the upload: it needs a
+      # certificate that is not in this repo, and the users of an unsigned
+      # installer see a SmartScreen prompt until it is.
+
+      # Release Please already created the tag and the release, so this only
+      # attaches the binary to it.
+      - name: Upload the installer
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          set -euo pipefail
+          ls target/release/bundle/nsis/*.exe
+          gh release upload "$TAG" target/release/bundle/nsis/*.exe --clobber

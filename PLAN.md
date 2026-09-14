@@ -291,7 +291,7 @@ Kept here so they land in the installer, not in someone's memory.
 
 ## 10. Releases
 
-Versions are SemVer and `bun run bump X.Y.Z` is the only way to change one: it writes `package.json`, `src-tauri/tauri.conf.json`, `Cargo.toml` and `Cargo.lock` together, CI fails when they disagree, and merging a bump into `main` tags `v<version>` and publishes the Windows installer.
+Versions are SemVer and Release Please owns them: pull request titles are Conventional Commits, squash merging makes the title the commit, and Release Please keeps one open pull request that writes `package.json`, `src-tauri/tauri.conf.json`, `Cargo.toml` and `Cargo.lock` together with the changelog entry. Merging that pull request tags `v<version>` and publishes the Windows installer built from the release commit; `bun run bump --check` stays in CI as the proof that the four files agree, and `bun run bump X.Y.Z` stays as an escape hatch that the next release pull request overwrites.
 
 ## 11. Open questions
 

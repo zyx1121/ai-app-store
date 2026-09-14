@@ -3,14 +3,56 @@ name: CI
 on:
   push:
     branches: [main]
+  # `edited` is here for pr-title: a squash merge turns the pull request title
+  # into the commit message Release Please reads, so a retitle must re-run the
+  # gate.
   pull_request:
+    types: [opened, reopened, synchronize, edited]
+  # release-please.yml asks for this by name on the release branch: a pull
+  # request opened by GITHUB_TOKEN starts no workflow, and `workflow_dispatch`
+  # is the documented way out.
+  workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # A retitle must not cancel a running build, so it gets its own group.
+  group: ci-${{ github.ref }}-${{ github.event.action == 'edited' && 'title' || 'code' }}
   cancel-in-progress: true
 
 jobs:
+  # The pull request title is the release input, so it is checked on its own
+  # and costs nothing when only the title moved.
+  pr-title:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # The same set release-please-config.json gives a changelog section.
+          types: |
+            feat
+            fix
+            perf
+            refactor
+            docs
+            ci
+            chore
+            test
+            build
+            revert
+          requireScope: false
+          # A changelog line reads as prose, so the subject starts lowercase.
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: >-
+            The subject "{subject}" of pull request "{title}" starts with an
+            uppercase letter. Conventional Commit subjects are lowercase.
+
   build:
+    # A retitle changes no code, so the Windows build sits it out.
+    if: github.event.action != 'edited'
     # Windows is the only target of version 1, so it is the only thing CI proves.
     runs-on: windows-latest
     steps:
@@ -20,8 +62,9 @@ jobs:
         with:
           bun-version: latest
 
-      # The version is in four files and release.yml reads one of them, so a
-      # disagreement is caught here rather than by a release that never tags.
+      # Release Please writes the version into four files at once. This proves
+      # they still agree, so a hand edit or a bad merge is caught here rather
+      # than by an installer that ships the wrong number.
       - name: Check the version
         run: bun run bump --check
 

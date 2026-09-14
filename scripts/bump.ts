@@ -10,8 +10,11 @@
  * `Cargo.lock`, which cargo would otherwise only refresh on the next build.
  * The lock is edited by text so no other dependency moves.
  *
- * This is the only way to change the version: merging a bump into main makes
- * release.yml tag `v<version>` and publish the installer.
+ * Release Please owns the version: it reads the Conventional Commit titles on
+ * main, opens a pull request that writes all four files, and tags `v<version>`
+ * when that pull request is merged. `--check` is the guard that proves the four
+ * still agree. Writing a version by hand is an escape hatch for the case where
+ * Release Please cannot run, and it warns when used.
  */
 import { readFile, writeFile } from 'node:fs/promises'
 
@@ -75,6 +78,11 @@ if (target === undefined || target === '--check') {
   console.log(`\nversion ${[...distinct][0]}`)
   process.exit(0)
 }
+
+console.warn('warning: Release Please owns the version.')
+console.warn('It bumps these files from the Conventional Commit titles on main,')
+console.warn('so a hand written version is an escape hatch, not the normal path.')
+console.warn('Expect the next release pull request to overwrite it.\n')
 
 if (!SEMVER.test(target)) {
   console.error(`not a SemVer version: ${target}`)

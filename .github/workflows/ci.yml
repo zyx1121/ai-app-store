@@ -20,6 +20,11 @@ jobs:
         with:
           bun-version: latest
 
+      # The version is in four files and release.yml reads one of them, so a
+      # disagreement is caught here rather than by a release that never tags.
+      - name: Check the version
+        run: bun run bump --check
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy

@@ -55,6 +55,14 @@ cargo run --bin aias -- apps validate <dir>   # headless, no GUI needed
 
 Every module is reachable from the CLI, so a machine reached over SSH verifies the same code the desktop app runs.
 
+## Releasing
+
+```bash
+bun run bump 0.2.0   # the only way to change the version
+```
+
+It rewrites the version in `package.json`, `src-tauri/tauri.conf.json`, `Cargo.toml` and the workspace entries in `Cargo.lock`; CI fails when they disagree. Open a pull request with that change, and merging it into `main` makes the release workflow tag `v0.2.0` and publish the Windows installer built from the merge commit. A merge that does not bump the version publishes nothing.
+
 ## Contributing
 
 Issues and PRs welcome: start with [CONTRIBUTING.md](https://github.com/zyx1121/.github/blob/main/CONTRIBUTING.md).

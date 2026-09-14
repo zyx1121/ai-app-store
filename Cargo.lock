@@ -19,7 +19,7 @@ dependencies = [
 
 [[package]]
 name = "aias-app"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "aias-core",
  "serde",
@@ -32,7 +32,7 @@ dependencies = [
 
 [[package]]
 name = "aias-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "axum",
  "clap",

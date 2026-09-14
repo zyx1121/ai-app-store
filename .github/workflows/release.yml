@@ -1,0 +1,82 @@
+name: release
+
+# Publishing is a merge, not a command: `bun run bump X.Y.Z` on a branch, then
+# merging that branch into main tags `vX.Y.Z` and attaches the Windows
+# installer built from the merge commit. A merge that does not change the
+# version finds its tag already there and stops after the first step, so
+# ordinary merges publish nothing.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    # The same runner and the same build as CI, so the released installer is
+    # the artifact CI already proved on the pull request.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # package.json is the one file read here; ci.yml proves the other three
+      # agree with it.
+      - name: Read the version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(jq -r .version package.json)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null 2>&1; then
+            echo "v$version is already released, nothing to do"
+            echo "released=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.version.outputs.released != 'true'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - if: steps.version.outputs.released != 'true'
+        uses: dtolnay/rust-toolchain@stable
+
+      - if: steps.version.outputs.released != 'true'
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: . -> target
+
+      - name: Install frontend dependencies
+        if: steps.version.outputs.released != 'true'
+        run: bun install --frozen-lockfile
+
+      - name: Build the Windows installer
+        if: steps.version.outputs.released != 'true'
+        run: bun run tauri build --bundles nsis
+
+      # The installer is unsigned and there are no updater artifacts yet. Code
+      # signing goes here, between the build and the release: it needs a
+      # certificate that is not in this repo, and the users of an unsigned
+      # installer see a SmartScreen prompt until it is.
+
+      # `gh release create --target` creates the tag on this commit, so the tag
+      # never exists without a release behind it.
+      - name: Tag and publish
+        if: steps.version.outputs.released != 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          ls target/release/bundle/nsis/*.exe
+          gh release create "v$VERSION" target/release/bundle/nsis/*.exe \
+            --target "$GITHUB_SHA" \
+            --title "v$VERSION" \
+            --generate-notes

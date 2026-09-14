@@ -129,7 +129,7 @@ services:
 env:                            # static, non secret, visible in the store
   NEXT_TELEMETRY_DISABLED: "1"
 
-secrets:                        # user is asked once on install, see section 10 for where they are kept
+secrets:                        # user is asked once on install, see section 11 for where they are kept
   - name: DOCUSIGN_API_KEY
     description: Optional. Enables sending the reviewed contract for signature.
 ```
@@ -289,7 +289,11 @@ Kept here so they land in the installer, not in someone's memory.
 - Throughput numbers from the web vary too much to plan on. Run `llama-bench` on both machines during M1 and record the numbers in this file.
 - Native services bound to a port trigger the Windows Firewall prompt unless bound to `127.0.0.1`. Every process the platform starts binds loopback.
 
-## 10. Open questions
+## 10. Releases
+
+Versions are SemVer and `bun run bump X.Y.Z` is the only way to change one: it writes `package.json`, `src-tauri/tauri.conf.json`, `Cargo.toml` and `Cargo.lock` together, CI fails when they disagree, and merging a bump into `main` tags `v<version>` and publishes the Windows installer.
+
+## 11. Open questions
 
 - Store index hosting: a public GitHub repo of manifests is enough for M4; who owns it after handoff is not decided.
 - Secrets storage: today a JSON file per App under the platform data directory, `secrets/<app>.json`, owner only (`0600`, and an ACL with inheritance broken on Windows). Windows Credential Manager is the target for version 1 and is not built yet. Whether the store ever syncs secrets between machines is open and defaults to no.

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "bump": "bun scripts/bump.ts",
     "check:commands": "bun scripts/check-commands.ts",
     "preview": "vite preview",
     "tauri": "tauri"

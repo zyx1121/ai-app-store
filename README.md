@@ -57,11 +57,39 @@ Every module is reachable from the CLI, so a machine reached over SSH verifies t
 
 ## Releasing
 
-```bash
-bun run bump 0.2.0   # the only way to change the version
+[Release Please](https://github.com/googleapis/release-please) owns the version. Nobody edits it by hand: the pull request title decides the next number, so the title is written as a [Conventional Commit](https://www.conventionalcommits.org/en/v1.0.0/) and squash merging turns it into the commit message Release Please reads.
+
+```
+feat: share one llama-server between apps
+fix(store): stop the search box eating the first keystroke
+docs: explain the lease model
 ```
 
-It rewrites the version in `package.json`, `src-tauri/tauri.conf.json`, `Cargo.toml` and the workspace entries in `Cargo.lock`; CI fails when they disagree. Open a pull request with that change, and merging it into `main` makes the release workflow tag `v0.2.0` and publish the Windows installer built from the merge commit. A merge that does not bump the version publishes nothing.
+CI rejects a title that is not one of `feat`, `fix`, `perf`, `refactor`, `docs`, `ci`, `chore`, `test`, `build` or `revert`, or whose subject starts with a capital letter. Only `feat`, `fix` and `perf` reach the changelog.
+
+This project is below 1.0, so the bump rules are the pre-1.0 ones:
+
+| Title | Bump | 0.1.1 becomes |
+|-------|------|---------------|
+| `fix:`, `perf:` | patch | 0.1.2 |
+| `feat:` | minor | 0.2.0 |
+| `feat!:` or a `BREAKING CHANGE:` footer | minor | 0.2.0 |
+| everything else, alone | nothing, no release pull request opens | 0.1.1 |
+
+A break bumping the minor rather than the major is the one pre-1.0 rule here: until 1.0 a break is allowed to be cheap, so it lands in the same place a feature does. That rule drops away at 1.0, where a break starts bumping the major.
+
+The last row is per batch, not per commit: a `docs` commit merged alongside a `fix` ships with it and is simply left out of the changelog. Only a batch with nothing in `feat`, `fix` or `perf` produces no release at all.
+
+Releasing is then a merge, not a command:
+
+1. Merge work into `main`. Release Please keeps one open pull request titled `chore(main): release <version>`, holding the next version in `package.json`, `src-tauri/tauri.conf.json`, `Cargo.toml` and the workspace entries in `Cargo.lock`, plus the `CHANGELOG.md` entry. It rewrites that pull request on every push.
+2. Merge the release pull request. That tags `v<version>`, creates the GitHub release from the changelog entry, and the `release-please` workflow builds the Windows installer from the release commit and uploads it to that release.
+
+CI runs `bun run bump --check` on every pull request, so the four files are proved to agree before anything ships.
+
+`bun run bump X.Y.Z` still exists as an escape hatch for the case where Release Please cannot run. It warns, and the next release pull request overwrites whatever it wrote.
+
+No secret is needed. GitHub starts no workflow for a pull request opened by `GITHUB_TOKEN`, so `release-please.yml` dispatches `ci.yml` by name on the release branch instead, which is one of the two documented exceptions to that rule, and the run reports against the branch head the pull request shows.
 
 ## Contributing
 

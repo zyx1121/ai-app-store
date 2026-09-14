@@ -26,7 +26,8 @@ const WORKSPACE_VERSION = /(\[workspace\.package\][^[]*?\bversion\s*=\s*")[^"]+(
 
 /** The `version` line of one crate's entry in the lock file. */
 function lockVersion(crate: string): RegExp {
-  return new RegExp(`(name = "${crate}"\\nversion = ")[^"]+(")`)
+  // `\r?\n` because a Windows checkout hands these files over with CRLF.
+  return new RegExp(`(name = "${crate}"\\r?\\nversion = ")[^"]+(")`)
 }
 
 type Source = {
